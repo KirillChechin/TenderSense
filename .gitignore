@@ -1,3 +1,5 @@
 
-__pycache__/links.cpython-310.pyc
+__pycache__/
 search_result.xlsx
+bot_config.py
+*.xlsx

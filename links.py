@@ -35,9 +35,19 @@ okpd = "okpd2Ids=8889410%2C8889756%2C8891045%2C8889389%2C8891045%2C9370131%2C889
 orgs = raw_str.split("\n") # .replace("customerIdOrg=", '')
 
 # demo = base+params+"&"+orgs[1]
-demo = base+params+okpd
+all_okpd = base+params+okpd
+
+def vip_orgs():
+	vip_orgs = []
+	for o in orgs:
+		result = base+params+okpd+'&'+o
+		vip_orgs.append(result)
+	return vip_orgs
+
+
 
 
 if __name__ == '__main__':
-
-	print(demo)
+	# vips = vip_orgs()
+	# print(*vips,sep="\n\n")
+	print(all_okpd)
