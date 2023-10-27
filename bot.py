@@ -8,6 +8,10 @@ import glob
 import re
 import time
 
+# Описание команд тг бота
+# okpd - ОКПД2
+# orgs - отслеживаемые заказчики
+
 
 bot = telebot.TeleBot(bot_config.token)
 
@@ -26,7 +30,7 @@ def okpd(message):
 		src = parser.result_table(parser.report_okpd())
 		doc = open(file=src,mode='rb')
 		bot.send_document(message.chat.id, doc)
-		bot.reply_to(message, "ССылка на поисковый запрос "+links.all_okpd)
+		bot.reply_to(message, "Ссылка на поисковый запрос "+links.all_okpd)
 	except Exception as e:
 		print(e)
 		bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(e))
