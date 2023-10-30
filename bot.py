@@ -11,6 +11,7 @@ import time
 # Описание команд тг бота
 # okpd - ОКПД2
 # orgs - отслеживаемые заказчики
+# no - исключить ГК из отчета
 
 
 bot = telebot.TeleBot(bot_config.token)
@@ -24,25 +25,47 @@ def send_start_message(message):
 # ИНтересующие ОКПД
 @bot.message_handler(commands=["okpd"])
 def okpd(message):
+	# try:
+	count = links.okpd_count()
+	msg = f"""Собираю тендеры по отслеживаемым ОКПД ({count} шт.)"""
+	bot.reply_to(message, msg)
+	src = parser.report_okpd()
+	doc = open(file=src,mode='rb')
+	bot.send_document(message.chat.id, doc)
+	bot.reply_to(message, "Ссылка на поисковый запрос "+links.all_okpd())
+	# except Exception as e:
+	# 	print(e)
+	# 	bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(e))
+
+
+# НЕ итересующие ОКПД
+@bot.message_handler(commands=["no"])
+def no(message):
+
+	nos = re.findall(r'[0-9]{11,19}', message.text)
 	try:
-		msg = f"""Собираю тендеры по отслеживаемым ОКПД (32 шт.)"""
+		msg = f"""Помечаю заказы как не интересые ({len(nos)} шт.)"""
 		bot.reply_to(message, msg)
-		src = parser.result_table(parser.report_okpd())
-		doc = open(file=src,mode='rb')
-		bot.send_document(message.chat.id, doc)
-		bot.reply_to(message, "Ссылка на поисковый запрос "+links.all_okpd)
+		for i in nos:
+			i = int(i)
+			sucsess = links.log_tender_stale(i)
+			if not sucsess:
+				bot.reply_to(message, f"не удалось внести внести в неинтересные: {i}")
+
 	except Exception as e:
 		print(e)
 		bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(e))
+
 
 
 # Важные поставщики
 @bot.message_handler(commands=["orgs"])
 def vips(message):
 	try:
-		msg = f"""Собираю тендеры отслеживаемых заказчиков ({len(links.vip_orgs())} шт.)"""
+		count = links.vip_count()
+		msg = f"""Собираю тендеры отслеживаемых заказчиков ({count} шт.)"""
 		bot.reply_to(message, msg)
-		src = parser.result_table(parser.report_vip())
+		src = parser.report_vip()
 		doc = open(file=src,mode='rb')
 		bot.send_document(message.chat.id, doc)
 

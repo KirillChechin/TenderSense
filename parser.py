@@ -8,7 +8,7 @@ import time
 from time import gmtime, strftime
 from datetime import datetime
 
-
+import sqlite3
 import openpyxl
 from openpyxl.utils.cell import column_index_from_string as cifs
 from openpyxl.styles import Alignment
@@ -28,9 +28,9 @@ def super_int(string):
 	for char in string:
 		if char not in ['1','2','3','4','5','6','7','8','9','0',".",","]:
 			string = string.replace(char, "")
-	return int(string.replace(",","."))
+	return int(float(string.replace(",",".")))
 
-def parse_page(doc):
+def parse_page(doc,log=True):
 	soup = BeautifulSoup(doc, "html.parser")
 	# entrys = soup.findAll("div", class_="search-registry-entrys-block") # хотя правильно entries
 	entrys = soup.findAll("div", class_="search-registry-entry-block box-shadow-search-input") # хотя правильно entries
@@ -56,11 +56,12 @@ def parse_page(doc):
 		# ссылка на закупку
 		gk_link = base_url+gk.find('a').get("href")
 		# номер контракта
-		gk = re.sub(r'\s+', ' ', gk.text)
+		gk = re.sub(r'\D', '', gk.text)
 
 		# цена
 		price = e.find("div", class_="price-block__value").text
-		price = re.sub(r'\s+', '', price)
+		# price = re.sub(r'\s+', '', price)
+		price = super_int(price)
 
 		dates = e.find('div',class_='data-block mt-auto').findAll('div',class_='data-block__value')
 		# дата размещения
@@ -70,10 +71,11 @@ def parse_page(doc):
 
 		# ссылка на документы
 		doc_link = base_url + e.find("div", class_='href-block mt-auto d-none').find('a').get("href")
-		# print(doc_link)
 
-		# print(buyer,subj,gk,gk_link,price)
-		result.append((buyer,buyer_link,gk,gk_link,subj,price,pub_date,end_date,doc_link))
+		pos = {"buyer":buyer,"buyer_link":buyer_link,"gk":gk,"gk_link":gk_link,"subj":subj,"price":price, "pub_date":pub_date ,"end_date": end_date, "doc_link":doc_link}
+		result.append(pos)
+		if log:
+			links.log_tender(pos["gk"],pos["price"])
 	return result
 
 def result_table(pos_list):
@@ -91,28 +93,31 @@ def result_table(pos_list):
 	ws.cell(cur_row, cifs('E'), value= "Цена" ).style = "Headline 4"
 	ws.cell(cur_row, cifs('F'), value= "Опубликовано" ).style = "Headline 4"
 	ws.cell(cur_row, cifs('G'), value= "Дата окончания" ).style = "Headline 4"
-	ws.cell(cur_row, cifs('H'), value= "Документы" ).style = "Headline 4"
+	# ws.cell(cur_row, cifs('H'), value= "Документы" ).style = "Headline 4"
 	cur_row += 1
 
 	for i,p in enumerate(pos_list,start=1):
+		if links.tender_is_stale(p["gk"]):
+			print(p["gk"], "is stale")
+			continue
 		try:
 			ws.cell(cur_row, cifs('A'), value= i )
 
-			ws.cell(cur_row, cifs('B'), value= p[0] ).style = 'Hyperlink'
-			ws.cell(cur_row, cifs('B') ).hyperlink = p[1]
+			ws.cell(cur_row, cifs('B'), value= p["buyer"] ).style = 'Hyperlink'
+			ws.cell(cur_row, cifs('B') ).hyperlink = p["buyer_link"]
 			# ws.cell(cur_row, cifs('B') ).style.alignment.wrap_text=True
 
-			ws.cell(cur_row, cifs('C'), value= p[2] ).style = 'Hyperlink'
+			ws.cell(cur_row, cifs('C'), value= p["gk"] ).style = 'Hyperlink'
 			# ws.cell(cur_row, cifs('C') ).style.alignment.wrap_text=True
-			ws.cell(cur_row, cifs('C') ).hyperlink = p[3]
+			ws.cell(cur_row, cifs('C') ).hyperlink = p["gk_link"]
 
-			ws.cell(cur_row, cifs('D'), value= p[4] )
-			ws.cell(cur_row, cifs('E'), value= p[5] )
-			ws.cell(cur_row, cifs('F'), value= p[6] )
-			ws.cell(cur_row, cifs('G'), value= p[7] )
+			ws.cell(cur_row, cifs('D'), value= p['subj'] )
+			ws.cell(cur_row, cifs('E'), value= p['price'] )
+			ws.cell(cur_row, cifs('F'), value= p['pub_date'] )
+			ws.cell(cur_row, cifs('G'), value= p['end_date'] )
 
-			ws.cell(cur_row, cifs('H'), value= "Документация" ).style = 'Hyperlink'
-			ws.cell(cur_row, cifs('H')).hyperlink = p[8]
+			# ws.cell(cur_row, cifs('H'), value= "Документация" ).style = 'Hyperlink'
+			# ws.cell(cur_row, cifs('H')).hyperlink = p['doc_link']
 			cur_row += 1
 		except Exception as e:
 			print(e,"ошибка в",p)
@@ -136,18 +141,21 @@ def result_table(pos_list):
 
 def report_vip():
 	search_query = links.vip_orgs()
+	search_query = [links.base+links.params+x[1] for x in search_query]
 	pos_list = []
 	for i,link in enumerate(search_query):
-		pos_list.extend(parse_page(requests.get(link, headers=headers).text))
+		query_pos_list = parse_page(requests.get(link, headers=headers, timeout=5).text)
+		pos_list.extend(query_pos_list)
 		time.sleep(0.1)
 		print("Ссылка",i)
-	return pos_list
+
+	return result_table(pos_list)
 
 
 def report_okpd(): 
-	search_query = links.all_okpd
-	pos_list = parse_page(requests.get(search_query, headers=headers).text)
-	return pos_list
+	search_query = links.all_okpd()
+	pos_list = parse_page(requests.get(search_query, headers=headers, timeout=5).text)
+	return result_table(pos_list)
 
 if __name__ == '__main__':
 	output_file = "search_result.xlsx"
@@ -166,5 +174,5 @@ if __name__ == '__main__':
 	# print(search_query)
 
 	# важные заказчики
-	result_table(report_vip())
-
+	print(report_vip())
+	print(report_okpd())
