@@ -2,7 +2,8 @@ import sqlite3
 import time
 
 base = 'https://zakupki.gov.ru/epz/order/extendedsearch/results.html?'
-params = 'sortBy=UPDATE_DATE&recordsPerPage=_200&fz44=on&fz223=on&af=on&delKladrIds=5277327%2C5277335&delKladrIdsCodes=50000000000%2C77000000000&'
+region = 'delKladrIds=5277327%2C5277335&delKladrIdsCodes=50000000000%2C77000000000&'
+params = 'sortBy=UPDATE_DATE&recordsPerPage=_200&fz44=on&fz223=on&af=on&'
 
 
 def vip_orgs():
@@ -11,10 +12,20 @@ def vip_orgs():
 	cursor.execute('SELECT * FROM orgs')
 	orgs = cursor.fetchall()
 	connection.close()
-	return orgs # (inn,link,name)
+	result = []
+	for org in orgs:
+		all_okpd_str = all_okpd(param_only=True)
+		full_link= base+params+all_okpd_str+org[1]
+		result.append((org[0],full_link,org[2]))
+	return result # (inn,link,name)
 
-def all_okpd():
-	result = base+params+"okpd2Ids="
+def all_okpd(param_only=False):
+	if param_only:
+		# partial url params
+		result = "okpd2Ids="
+	else:
+		#full url
+		result = base+params+region+"okpd2Ids="
 
 	connection = sqlite3.connect('tender_info.db')
 	cursor = connection.cursor()
@@ -24,7 +35,7 @@ def all_okpd():
 	for i in okpd:
 		i= str(i[0])
 		result += i+"%2C"
-	return result
+	return result+"&"
 
 def log_tender(gk_num,price=0):
 	connection = sqlite3.connect('tender_info.db')
@@ -80,14 +91,18 @@ def okpd_count():
 
 if __name__ == '__main__':
 	tend = {'buyer': ' ФЕДЕРАЛЬНОЕ ГОСУДАРСТВЕННОЕ БЮДЖЕТНОЕ ОБРАЗОВАТЕЛЬНОЕ УЧРЕЖДЕНИЕ ВЫСШЕГО ОБРАЗОВАНИЯ "РОССИЙСКИЙ ИНСТИТУТ ТЕАТРАЛЬНОГО ИСКУССТВА - ГИТИС" ', 'buyer_link': 'https://zakupki.gov.ru//epz/organization/view223/info.html?agencyId=590812', 'gk': 32312884268, 'gk_link': 'https://zakupki.gov.ru//epz/order/notice/notice223/common-info.html?noticeInfoId=15914431', 'subj': 'Выполнение работ по развитию системы видеонаблюдения в Учебно-театральном комплексе Российского института театрального искусства – ГИТИС', 'price': 7885076, 'pub_date': '23.10.2023', 'end_date': '02.11.2023', 'doc_link': 'https://zakupki.gov.ru//epz/order/notice/notice223/documents.html?noticeInfoId=15914431'}
-	log_tender(tend["gk"], tend['price'])
 	# log_tender_stale(tend["gk"],is_stale=False)
-	log_tender_stale(tend["gk"],is_stale=True)
-	# print(vip_orgs())
-	# print(all_okpd())
+	# log_tender(tend["gk"], tend['price'])
+	# log_tender_stale(tend["gk"],is_stale=True)
+	# print(tender_is_stale(tend["gk"]))
+	print(vip_orgs())
+	# search_query = vip_orgs()
+	# search_query = [base+params+x[1] for x in search_query]
+	# print(search_query)
+	# print(all_okpd(),"\n")
+	# print(all_okpd(param_only=True))
 	# print(vip_count())
 	# print(okpd_count())
-	print(tender_is_stale(tend["gk"]))
 
 
 

@@ -81,7 +81,7 @@ def parse_page(doc,log=True):
 def result_table(pos_list):
 	wb = openpyxl.Workbook()
 	ws = wb.active
-	col_width = {'A': 5,'B': 40,'C': 20, 'D': 40,'E': 15,'F': 12, 'G': 12, 'H': 16}
+	col_width = {'A': 5,'B': 40,'C': 25, 'D': 40,'E': 15,'F': 12, 'G': 12, 'H': 16}
 	for c, w in col_width.items():
 		ws.column_dimensions[c].width = w
 
@@ -95,24 +95,25 @@ def result_table(pos_list):
 	ws.cell(cur_row, cifs('G'), value= "Дата окончания" ).style = "Headline 4"
 	# ws.cell(cur_row, cifs('H'), value= "Документы" ).style = "Headline 4"
 	cur_row += 1
-
+	excluded = 0
 	for i,p in enumerate(pos_list,start=1):
 		if links.tender_is_stale(p["gk"]):
 			print(p["gk"], "is stale")
+			excluded +=1
 			continue
 		try:
 			ws.cell(cur_row, cifs('A'), value= i )
 
-			ws.cell(cur_row, cifs('B'), value= p["buyer"] ).style = 'Hyperlink'
-			ws.cell(cur_row, cifs('B') ).hyperlink = p["buyer_link"]
-			# ws.cell(cur_row, cifs('B') ).style.alignment.wrap_text=True
+			ws.cell(cur_row, cifs('B'), value= p["buyer"] ) #.style = 'Hyperlink'
+			# ws.cell(cur_row, cifs('B') ).hyperlink = p["buyer_link"]
+			ws.cell(cur_row, cifs('B') ).alignment = Alignment(wrap_text=True)
 
 			ws.cell(cur_row, cifs('C'), value= p["gk"] ).style = 'Hyperlink'
 			# ws.cell(cur_row, cifs('C') ).style.alignment.wrap_text=True
 			ws.cell(cur_row, cifs('C') ).hyperlink = p["gk_link"]
 
-			ws.cell(cur_row, cifs('D'), value= p['subj'] )
-			ws.cell(cur_row, cifs('E'), value= p['price'] )
+			ws.cell(cur_row, cifs('D'), value= p['subj'] ).alignment = Alignment(wrap_text=True)
+			ws.cell(cur_row, cifs('E'), value= p['price'] ).number_format = "### ### ##0.00 ₽" # "₽ #,##0.00"
 			ws.cell(cur_row, cifs('F'), value= p['pub_date'] )
 			ws.cell(cur_row, cifs('G'), value= p['end_date'] )
 
@@ -121,11 +122,13 @@ def result_table(pos_list):
 			cur_row += 1
 		except Exception as e:
 			print(e,"ошибка в",p)
-			ws.cell(cur_row, cifs('A'), value= "Ошибка") 
+			ws.cell(cur_row, cifs('A'), value= "Ошибка")
 			cur_row += 1
+	ws.cell(cur_row, cifs('A'), value= f"Исключено из выдачи: {excluded} шт." ).style = "Headline 3"
+	cur_row += 1
 
 	today = strftime("%d.%m.%Y ", gmtime())
-	file_name = f"Тендеры {str(len(pos_list)) } шт. {today}.xlsx"
+	file_name = f"Тендеры {str(len(pos_list)-excluded) } шт. {today}.xlsx"
 	try:
 		# output_file = r"G:\Мой диск\! Материально технический отдел\Еженедельный реестр оплат\!Отчёт"+ "\\" + file_name
 		output_file = './reports'+ "/" + file_name
@@ -147,7 +150,7 @@ def report_vip():
 		query_pos_list = parse_page(requests.get(link, headers=headers, timeout=5).text)
 		pos_list.extend(query_pos_list)
 		time.sleep(0.1)
-		print("Ссылка",i)
+		print("Ссылка", i, link)
 
 	return result_table(pos_list)
 
@@ -175,4 +178,4 @@ if __name__ == '__main__':
 
 	# важные заказчики
 	print(report_vip())
-	print(report_okpd())
+	# print(report_okpd())

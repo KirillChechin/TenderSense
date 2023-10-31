@@ -1,0 +1,1 @@
+cd C:\Users\Project4\Documents\GitHub\TenderSense && py bot.py
