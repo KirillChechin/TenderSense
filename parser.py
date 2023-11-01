@@ -147,7 +147,7 @@ def report_vip():
 	search_query = [links.base+links.params+x[1] for x in search_query]
 	pos_list = []
 	for i,link in enumerate(search_query):
-		query_pos_list = parse_page(requests.get(link, headers=headers, timeout=5).text)
+		query_pos_list = parse_page(requests.get(link, headers=headers, timeout=15).text)
 		pos_list.extend(query_pos_list)
 		time.sleep(0.1)
 		print("Ссылка", i, link)
@@ -157,7 +157,7 @@ def report_vip():
 
 def report_okpd(): 
 	search_query = links.all_okpd()
-	pos_list = parse_page(requests.get(search_query, headers=headers, timeout=5).text)
+	pos_list = parse_page(requests.get(search_query, headers=headers, timeout=15).text)
 	return result_table(pos_list)
 
 if __name__ == '__main__':

@@ -3,7 +3,7 @@ import time
 
 base = 'https://zakupki.gov.ru/epz/order/extendedsearch/results.html?'
 region = 'delKladrIds=5277327%2C5277335&delKladrIdsCodes=50000000000%2C77000000000&'
-params = 'sortBy=UPDATE_DATE&recordsPerPage=_200&fz44=on&fz223=on&af=on&'
+params = 'sortBy=UPDATE_DATE&recordsPerPage=_500&fz44=on&fz223=on&af=on&'
 
 
 def vip_orgs():
@@ -20,12 +20,13 @@ def vip_orgs():
 	return result # (inn,link,name)
 
 def all_okpd(param_only=False):
+	okpd_param = "okpd2IdsWithNested=on&okpd2Ids="
 	if param_only:
 		# partial url params
-		result = "okpd2Ids="
+		result = okpd_param
 	else:
 		#full url
-		result = base+params+region+"okpd2Ids="
+		result = base+params+region+okpd_param
 
 	connection = sqlite3.connect('tender_info.db')
 	cursor = connection.cursor()
