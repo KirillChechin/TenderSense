@@ -1,4 +1,4 @@
-import parser
+import parse_logic
 import links
 import bot_config
 
@@ -29,7 +29,7 @@ def okpd(message):
 	count = links.okpd_count()
 	msg = f"""Собираю тендеры по отслеживаемым ОКПД ({count} шт.)"""
 	bot.reply_to(message, msg)
-	src = parser.report_okpd()
+	src = parse_logic.report_okpd()
 	doc = open(file=src,mode='rb')
 	bot.send_document(message.chat.id, doc)
 	bot.reply_to(message, "Ссылка на поисковый запрос "+links.all_okpd())
@@ -65,7 +65,7 @@ def vips(message):
 		count = links.vip_count()
 		msg = f"""Собираю тендеры отслеживаемых заказчиков ({count} шт.)"""
 		bot.reply_to(message, msg)
-		src = parser.report_vip()
+		src = parse_logic.report_vip()
 		doc = open(file=src,mode='rb')
 		bot.send_document(message.chat.id, doc)
 
