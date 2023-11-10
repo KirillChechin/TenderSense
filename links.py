@@ -6,8 +6,8 @@ base = 'https://zakupki.gov.ru/epz/order/extendedsearch/results.html?'
 region = 'delKladrIds=5277327%2C5277335&delKladrIdsCodes=50000000000%2C77000000000&'
 region='customerPlace=5277327%2C5277335&customerPlaceCodes=50000000000%2C77000000000&'
 params = 'sortBy=UPDATE_DATE&recordsPerPage=_500&fz44=on&fz223=on&af=on&'
-
-upb_date = "publishDateFrom=01.10.2023&"
+# past_date = datetime.datetime.today() – datetime.timedelta(month=1)
+# upb_date = "publishDateFrom=01.10.2023&"
 
 
 def vip_orgs():
