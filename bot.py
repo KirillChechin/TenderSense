@@ -3,7 +3,7 @@ import links
 import bot_config
 
 import telebot
-import os, shutil
+import os, shutil, traceback
 import glob
 import re
 import time
@@ -25,23 +25,23 @@ def send_start_message(message):
 # ИНтересующие ОКПД
 @bot.message_handler(commands=["okpd"])
 def okpd(message):
-	# try:
-	count = links.okpd_count()
-	msg = f"""Собираю тендеры по отслеживаемым ОКПД ({count} шт.)"""
-	bot.reply_to(message, msg)
-	src = parse_logic.report_okpd()
-	doc = open(file=src,mode='rb')
-	bot.send_document(message.chat.id, doc)
-	bot.reply_to(message, "Ссылка на поисковый запрос "+links.all_okpd())
-	# except Exception as e:
-	# 	print(e)
-	# 	bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(e))
+	try:
+		count = links.okpd_count()
+		msg = f"""Собираю тендеры по отслеживаемым ОКПД ({count} шт.)"""
+		bot.reply_to(message, msg)
+		src = parse_logic.report_okpd()
+		doc = open(file=src,mode='rb')
+		bot.send_document(message.chat.id, doc)
+		bot.reply_to(message, f"[Ссылка на поисковый запрос]({links.all_okpd()})", parse_mode="MarkdownV2")
+	except Exception as e:
+		err_msg = f"{message.from_user}:{message.text}"+traceback.format_exc()
+		print(err_msg)
+		bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(err_msg))
 
 
 # НЕ итересующие ОКПД
 @bot.message_handler(commands=["no"])
 def no(message):
-
 	nos = re.findall(r'[0-9]{11,19}', message.text)
 	try:
 		msg = f"""Помечаю заказы как не интересые ({len(nos)} шт.)"""
@@ -51,10 +51,10 @@ def no(message):
 			sucsess = links.log_tender_stale(i)
 			if not sucsess:
 				bot.reply_to(message, f"не удалось внести внести в неинтересные: {i}")
-
 	except Exception as e:
-		print(e)
-		bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(e))
+		err_msg = f"{message.from_user}:{message.text}"+traceback.format_exc()
+		print(err_msg)
+		bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(err_msg))
 
 
 
@@ -68,10 +68,10 @@ def vips(message):
 		src = parse_logic.report_vip()
 		doc = open(file=src,mode='rb')
 		bot.send_document(message.chat.id, doc)
-
 	except Exception as e:
-		print(e)
-		bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(e))
+		err_msg = f"{message.from_user}:{message.text}"+traceback.format_exc()
+		print(err_msg)
+		bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(err_msg))
 
 if __name__ == '__main__':
 	print("Бот работает \n",os.getcwd())

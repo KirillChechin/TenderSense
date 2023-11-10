@@ -40,7 +40,7 @@ def parse_page(doc,log=True):
 
 	total_enties = soup.find("div", class_='search-results__total').text
 	total_enties = super_int(total_enties)
-	print("Заявок по ссылке:",total_enties)
+	# print("Заявок по ссылке:",total_enties)
 
 	for e in entrys:
 		# Поставщик
@@ -98,7 +98,7 @@ def result_table(pos_list):
 	excluded = 0
 	for i,p in enumerate(pos_list,start=1):
 		if links.tender_is_stale(p["gk"]):
-			print(p["gk"], "is stale")
+			# print(p["gk"], "is stale")
 			excluded +=1
 			continue
 		try:
@@ -146,16 +146,16 @@ def report_vip():
 	search_query = links.vip_orgs()
 	search_query = [links.base+links.params+x[1] for x in search_query]
 	pos_list = []
+	print("просмотр ссылок", len(search_query))
 	for i,link in enumerate(search_query):
 		query_pos_list = parse_page(requests.get(link, headers=headers, timeout=15).text)
 		pos_list.extend(query_pos_list)
-		time.sleep(0.1)
-		print("Ссылка", i, link)
+		# time.sleep(0.1)
 
 	return result_table(pos_list)
 
 
-def report_okpd(): 
+def report_okpd():
 	search_query = links.all_okpd()
 	pos_list = parse_page(requests.get(search_query, headers=headers, timeout=15).text)
 	return result_table(pos_list)
@@ -177,5 +177,5 @@ if __name__ == '__main__':
 	# print(search_query)
 
 	# важные заказчики
-	print(report_vip())
-	# print(report_okpd())
+	# print(report_vip())
+	print(report_okpd())

@@ -1,9 +1,13 @@
 import sqlite3
 import time
+import datetime
 
 base = 'https://zakupki.gov.ru/epz/order/extendedsearch/results.html?'
 region = 'delKladrIds=5277327%2C5277335&delKladrIdsCodes=50000000000%2C77000000000&'
+region='customerPlace=5277327%2C5277335&customerPlaceCodes=50000000000%2C77000000000&'
 params = 'sortBy=UPDATE_DATE&recordsPerPage=_500&fz44=on&fz223=on&af=on&'
+
+upb_date = "publishDateFrom=01.10.2023&"
 
 
 def vip_orgs():
@@ -44,7 +48,8 @@ def log_tender(gk_num,price=0):
 	cursor.execute('SELECT gk_num FROM tenders WHERE gk_num = ?',(gk_num,))
 	tender = cursor.fetchall()
 	if tender:
-		print("tender exists",tender)
+		# print("tender exists",tender)
+		pass
 	else:
 		cursor.execute('INSERT INTO tenders (gk_num, timestamp, price ) VALUES (?, ?,?)', (gk_num, time.time(), price))
 		print("tender logged",gk_num)
@@ -60,7 +65,7 @@ def log_tender_stale(gk_num,is_stale=True):
 	tender = cursor.fetchall()
 	if tender:
 		cursor.execute('UPDATE tenders SET "is_stale" = ?, timestamp = ? where "gk_num"=?;',(is_stale,time.time(),gk_num))
-		print("tender updated",tender, "set is_stale", is_stale)
+		# print("tender updated",tender, "set is_stale", is_stale)
 		connection.commit()
 		connection.close()
 		return True
@@ -96,14 +101,14 @@ if __name__ == '__main__':
 	# log_tender(tend["gk"], tend['price'])
 	# log_tender_stale(tend["gk"],is_stale=True)
 	# print(tender_is_stale(tend["gk"]))
-	print(vip_orgs())
+	# print(vip_orgs())
+	# print(vip_count())
 	# search_query = vip_orgs()
 	# search_query = [base+params+x[1] for x in search_query]
 	# print(search_query)
-	# print(all_okpd(),"\n")
+	print(all_okpd(),"\n")
 	# print(all_okpd(param_only=True))
-	# print(vip_count())
-	# print(okpd_count())
+	print(okpd_count())
 
 
 
