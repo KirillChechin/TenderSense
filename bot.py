@@ -32,12 +32,12 @@ def okpd(message):
 		src = parse_logic.report_okpd()
 		doc = open(file=src,mode='rb')
 		bot.send_document(message.chat.id, doc)
-		bot.reply_to(message, f"[Ссылка на поисковый запрос]({links.all_okpd()})", parse_mode="MarkdownV2")
+		# bot.reply_to(message, f"[s](google.com)", parse_mode="MarkdownV2")
+		bot.reply_to(message, f"<a href='{links.all_okpd()}'>Ссылка на поисковый запрос</a>", parse_mode='HTML')
 	except Exception as e:
 		err_msg = f"{message.from_user}:{message.text}"+traceback.format_exc()
 		print(err_msg)
 		bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(err_msg))
-
 
 # НЕ итересующие ОКПД
 @bot.message_handler(commands=["no"])
@@ -56,8 +56,6 @@ def no(message):
 		print(err_msg)
 		bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(err_msg))
 
-
-
 # Важные поставщики
 @bot.message_handler(commands=["orgs"])
 def vips(message):
@@ -65,7 +63,7 @@ def vips(message):
 		count = links.vip_count()
 		msg = f"""Собираю тендеры отслеживаемых заказчиков ({count} шт.)"""
 		bot.reply_to(message, msg)
-		src = parse_logic.report_vip()
+		src = parse_logic.report_orgs()
 		doc = open(file=src,mode='rb')
 		bot.send_document(message.chat.id, doc)
 	except Exception as e:

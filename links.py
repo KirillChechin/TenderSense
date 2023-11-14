@@ -1,14 +1,18 @@
 import sqlite3
-import time
-import datetime
+import time, datetime
+import urllib.parse
+
+records_per_page = 500
 
 base = 'https://zakupki.gov.ru/epz/order/extendedsearch/results.html?'
-region = 'delKladrIds=5277327%2C5277335&delKladrIdsCodes=50000000000%2C77000000000&'
+# region = 'delKladrIds=5277327%2C5277335&delKladrIdsCodes=50000000000%2C77000000000&'
 region='customerPlace=5277327%2C5277335&customerPlaceCodes=50000000000%2C77000000000&'
-params = 'sortBy=UPDATE_DATE&recordsPerPage=_500&fz44=on&fz223=on&af=on&'
-# past_date = datetime.datetime.today() – datetime.timedelta(month=1)
-# upb_date = "publishDateFrom=01.10.2023&"
+params = f'sortBy=UPDATE_DATE&recordsPerPage=_{records_per_page}&fz44=on&fz223=on&af=on&'
+start_price ='priceFromGeneral=1000000&'
 
+past_date = datetime.datetime.today()-datetime.timedelta(days=5)
+format_date = past_date.strftime("%d.%m.%Y")
+param_date = f"publishDateFrom={format_date}&"
 
 def vip_orgs():
 	connection = sqlite3.connect('tender_info.db')
@@ -25,21 +29,23 @@ def vip_orgs():
 
 def all_okpd(param_only=False):
 	okpd_param = "okpd2IdsWithNested=on&okpd2Ids="
-	if param_only:
-		# partial url params
-		result = okpd_param
-	else:
-		#full url
-		result = base+params+region+okpd_param
-
 	connection = sqlite3.connect('tender_info.db')
 	cursor = connection.cursor()
 	cursor.execute('SELECT id FROM okpd')
 	okpd = cursor.fetchall()
 	connection.close()
+
 	for i in okpd:
 		i= str(i[0])
-		result += i+"%2C"
+		okpd_param += i+"%2C"
+
+	if param_only:
+		# partial url params
+		result = okpd_param
+	else:
+		#full url
+		result = base+params+start_price+param_date+region+okpd_param
+
 	return result+"&"
 
 def log_tender(gk_num,price=0):
@@ -56,7 +62,6 @@ def log_tender(gk_num,price=0):
 	connection.commit()
 	connection.close()
 	return
-
 
 def log_tender_stale(gk_num,is_stale=True):
 	connection = sqlite3.connect('tender_info.db')
@@ -107,8 +112,10 @@ if __name__ == '__main__':
 	# search_query = [base+params+x[1] for x in search_query]
 	# print(search_query)
 	print(all_okpd(),"\n")
+	print(len(all_okpd()))
 	# print(all_okpd(param_only=True))
-	print(okpd_count())
+	# print(okpd_count())
+	print(url_param())
 
 
 

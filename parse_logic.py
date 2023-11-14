@@ -30,7 +30,8 @@ def super_int(string):
 			string = string.replace(char, "")
 	return int(float(string.replace(",",".")))
 
-def parse_page(doc,log=True):
+def parse_page(link,log=True):
+	doc = requests.get(link, headers=headers, timeout=15).text
 	soup = BeautifulSoup(doc, "html.parser")
 	# entrys = soup.findAll("div", class_="search-registry-entrys-block") # хотя правильно entries
 	entrys = soup.findAll("div", class_="search-registry-entry-block box-shadow-search-input") # хотя правильно entries
@@ -38,9 +39,20 @@ def parse_page(doc,log=True):
 	result = []
 	base_url = 'https://zakupki.gov.ru/'
 
+	#перебираем все страницы результатов поиска
 	total_enties = soup.find("div", class_='search-results__total').text
 	total_enties = super_int(total_enties)
-	# print("Заявок по ссылке:",total_enties)
+	total_enties = min(total_enties,10_000) # потолок 10 000 тендеров, на случай если запрос выдаст 39 млн резуальтатов 
+	if links.records_per_page < total_enties:
+		total_pages = total_enties//links.records_per_page +1
+		print(f"{total_enties} запсией, запрос {total_pages} страниц по {links.records_per_page} на странице")
+		for p in range(2,total_pages+1): # информация первой страницы уже в entrys, начинаем со второй
+			page = f'pageNumber={p}&'
+			this_link = link + page
+			doc = requests.get(this_link, headers=headers, timeout=15).text
+			soup = BeautifulSoup(doc, "html.parser")
+			entrys.extend(soup.findAll("div", class_="search-registry-entry-block box-shadow-search-input"))
+			# print(f"{page}","текущий размер выборки",len(entrys))
 
 	for e in entrys:
 		# Поставщик
@@ -138,26 +150,24 @@ def result_table(pos_list):
 		print("Ошибка имени сохраняемого файла :",e)
 		output_file = './reports'+ "/"+"Тендеры "+ str(time.time_ns()) +".xlsx"
 		wb.save(output_file)
-		print(f"Отчет по {len(pos_list)} тендерам сохранен под названием {output_file}")
+		print(f"Сохранено под названием {output_file}")
 	finally:
 		return output_file
 
-def report_vip():
+def report_orgs():
 	search_query = links.vip_orgs()
 	search_query = [links.base+links.params+x[1] for x in search_query]
 	pos_list = []
 	print("просмотр ссылок", len(search_query))
 	for i,link in enumerate(search_query):
-		query_pos_list = parse_page(requests.get(link, headers=headers, timeout=15).text)
+		query_pos_list = parse_page(link)
 		pos_list.extend(query_pos_list)
 		# time.sleep(0.1)
-
 	return result_table(pos_list)
-
 
 def report_okpd():
 	search_query = links.all_okpd()
-	pos_list = parse_page(requests.get(search_query, headers=headers, timeout=15).text)
+	pos_list = parse_page(search_query)
 	return result_table(pos_list)
 
 if __name__ == '__main__':
@@ -177,5 +187,5 @@ if __name__ == '__main__':
 	# print(search_query)
 
 	# важные заказчики
-	# print(report_vip())
+	print(report_orgs())
 	print(report_okpd())
