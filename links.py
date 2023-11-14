@@ -115,7 +115,6 @@ if __name__ == '__main__':
 	print(len(all_okpd()))
 	# print(all_okpd(param_only=True))
 	# print(okpd_count())
-	print(url_param())
 
 
 
