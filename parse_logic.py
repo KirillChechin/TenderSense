@@ -23,7 +23,7 @@ headers= {"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTM
 # 	f.write(r.text)
 
 def super_int(string):
-	# очищает число от пробелов и символов
+	"""очищает число от пробелов и символов"""
 	string = str(string)
 	for char in string:
 		if char not in ['1','2','3','4','5','6','7','8','9','0',".",","]:
@@ -84,16 +84,38 @@ def parse_page(link,log=True):
 		# ссылка на документы
 		doc_link = base_url + e.find("div", class_='href-block mt-auto d-none').find('a').get("href")
 
-		pos = {"buyer":buyer,"buyer_link":buyer_link,"gk":gk,"gk_link":gk_link,"subj":subj,"price":price, "pub_date":pub_date ,"end_date": end_date, "doc_link":doc_link}
+		# Тип аукцина, закрытые не нужны
+		tender_type = e.find("div", class_="col-9 p-0 registry-entry__header-top__title text-truncate")
+		tender_type = re.sub(r'\s+', ' ', tender_type.text)
+
+		pos = {"buyer":buyer,"buyer_link":buyer_link,"gk":gk,"gk_link":gk_link,"subj":subj,"price":price, "pub_date":pub_date ,"end_date": end_date, "doc_link":doc_link,"tender_type":tender_type}
+		
+		# собираем доп инфу по каждой заявке
+		entry = requests.get(gk_link, headers=headers, timeout=15).text
+		soup = BeautifulSoup(entry, "html.parser")
+		info_blocks = soup.find_all("div",class_='row blockInfo')
+		pos['contract_insurance'] = None
+		pos['tender_insurance'] = None
+		for block in info_blocks:
+			title = block.find('h2')
+			title = title.text if title else "NONE"
+			# print("просмотр блока",title)
+			if "Обеспечение исполнения контракта" in title:
+				contract_insurance = block.find_all("span")[:4]
+				pos['contract_insurance'] = " /".join(re.sub(r'\s+', ' ', x.text) for x in contract_insurance)
+			elif "Обеспечение заявки" in title:
+				tender_insurance = block.find_all("span")[:4]
+				pos["tender_insurance"] = " /".join(re.sub(r'\s+', ' ', x.text)  for x in tender_insurance)
+
 		result.append(pos)
-		if log:
-			links.log_tender(pos["gk"],pos["price"])
+		links.log_tender(pos["gk"],pos["price"]) if log else None
+
 	return result
 
 def result_table(pos_list):
 	wb = openpyxl.Workbook()
 	ws = wb.active
-	col_width = {'A': 5,'B': 40,'C': 25, 'D': 40,'E': 15,'F': 12, 'G': 12, 'H': 16}
+	col_width = {'A': 5,'B': 40,'C': 25, 'D': 50,'E': 15,'F': 12, 'G': 12, 'H': 30, 'I': 30, 'J': 30}
 	for c, w in col_width.items():
 		ws.column_dimensions[c].width = w
 
@@ -113,29 +135,33 @@ def result_table(pos_list):
 			# print(p["gk"], "is stale")
 			excluded +=1
 			continue
-		try:
-			ws.cell(cur_row, cifs('A'), value= i )
+		# try:
+		ws.cell(cur_row, cifs('A'), value= i )
 
-			ws.cell(cur_row, cifs('B'), value= p["buyer"] ) #.style = 'Hyperlink'
-			# ws.cell(cur_row, cifs('B') ).hyperlink = p["buyer_link"]
-			ws.cell(cur_row, cifs('B') ).alignment = Alignment(wrap_text=True)
+		ws.cell(cur_row, cifs('B'), value= p["buyer"] ) #.style = 'Hyperlink'
+		# ws.cell(cur_row, cifs('B') ).hyperlink = p["buyer_link"]
+		ws.cell(cur_row, cifs('B') ).alignment = Alignment(wrap_text=True)
 
-			ws.cell(cur_row, cifs('C'), value= p["gk"] ).style = 'Hyperlink'
-			# ws.cell(cur_row, cifs('C') ).style.alignment.wrap_text=True
-			ws.cell(cur_row, cifs('C') ).hyperlink = p["gk_link"]
+		ws.cell(cur_row, cifs('C'), value= p["gk"] ).style = 'Hyperlink'
+		# ws.cell(cur_row, cifs('C') ).style.alignment.wrap_text=True
+		ws.cell(cur_row, cifs('C') ).hyperlink = p["gk_link"]
 
-			ws.cell(cur_row, cifs('D'), value= p['subj'] ).alignment = Alignment(wrap_text=True)
-			ws.cell(cur_row, cifs('E'), value= p['price'] ).number_format = "### ### ##0.00 ₽" # "₽ #,##0.00"
-			ws.cell(cur_row, cifs('F'), value= p['pub_date'] )
-			ws.cell(cur_row, cifs('G'), value= p['end_date'] )
+		ws.cell(cur_row, cifs('D'), value= p['subj'] ).alignment = Alignment(wrap_text=True)
+		ws.cell(cur_row, cifs('E'), value= p['price'] ).number_format = "### ### ##0.00 ₽" # "₽ #,##0.00"
+		ws.cell(cur_row, cifs('F'), value= p['pub_date'] )
+		ws.cell(cur_row, cifs('G'), value= p['end_date'] )
+		ws.cell(cur_row, cifs('H'), value= p['tender_type'] ).alignment = Alignment(wrap_text=True)
 
-			# ws.cell(cur_row, cifs('H'), value= "Документация" ).style = 'Hyperlink'
-			# ws.cell(cur_row, cifs('H')).hyperlink = p['doc_link']
-			cur_row += 1
-		except Exception as e:
-			print(e,"ошибка в",p)
-			ws.cell(cur_row, cifs('A'), value= "Ошибка")
-			cur_row += 1
+		ws.cell(cur_row, cifs('I'), value= p['contract_insurance'] ).alignment = Alignment(wrap_text=True) if p['contract_insurance'] else None
+		ws.cell(cur_row, cifs('J'), value= p['tender_insurance'] ).alignment = Alignment(wrap_text=True) if p['tender_insurance'] else None
+
+		# ws.cell(cur_row, cifs('H'), value= "Документация" ).style = 'Hyperlink'
+		# ws.cell(cur_row, cifs('H')).hyperlink = p['doc_link']
+		cur_row += 1
+		# except Exception as e:
+		# 	print(e,"ошибка в",p)
+		# 	ws.cell(cur_row, cifs('A'), value= "Ошибка")
+		# 	cur_row += 1
 	ws.cell(cur_row, cifs('A'), value= f"Исключено из выдачи: {excluded} шт." ).style = "Headline 3"
 	cur_row += 1
 
@@ -187,5 +213,5 @@ if __name__ == '__main__':
 	# print(search_query)
 
 	# важные заказчики
-	print(report_orgs())
+	# print(report_orgs())
 	print(report_okpd())

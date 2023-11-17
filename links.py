@@ -7,12 +7,18 @@ records_per_page = 500
 base = 'https://zakupki.gov.ru/epz/order/extendedsearch/results.html?'
 # region = 'delKladrIds=5277327%2C5277335&delKladrIdsCodes=50000000000%2C77000000000&'
 region='customerPlace=5277327%2C5277335&customerPlaceCodes=50000000000%2C77000000000&'
-params = f'sortBy=UPDATE_DATE&recordsPerPage=_{records_per_page}&fz44=on&fz223=on&af=on&'
+params = f'sortBy=UPDATE_DATE&showLotsInfoHidden=false&recordsPerPage=_{records_per_page}&fz44=on&fz223=on&af=on&'
 start_price ='priceFromGeneral=1000000&'
 
-past_date = datetime.datetime.today()-datetime.timedelta(days=5)
-format_date = past_date.strftime("%d.%m.%Y")
-param_date = f"publishDateFrom={format_date}&"
+def prev_work_day(days=1):
+	past_date = datetime.datetime.today()-datetime.timedelta(days)
+	while past_date.weekday()>4:
+		# print(past_date.strftime("%d.%m.%Y"),"is a weekend")
+		past_date = past_date-datetime.timedelta(1)
+	format_date = past_date.strftime("%d.%m.%Y")
+	return format_date
+
+param_date = f"publishDateFrom={prev_work_day(1)}&"
 
 def vip_orgs():
 	connection = sqlite3.connect('tender_info.db')
@@ -111,10 +117,8 @@ if __name__ == '__main__':
 	# search_query = vip_orgs()
 	# search_query = [base+params+x[1] for x in search_query]
 	# print(search_query)
-	print(all_okpd(),"\n")
-	print(len(all_okpd()))
+	# print(all_okpd(),"\n")
+	# print(len(all_okpd()))
 	# print(all_okpd(param_only=True))
 	# print(okpd_count())
-
-
-
+	print(prev_work_day(days=5))
