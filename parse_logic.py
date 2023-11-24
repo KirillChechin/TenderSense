@@ -127,7 +127,10 @@ def result_table(pos_list):
 	ws.cell(cur_row, cifs('D'), value= "Закупка" ).style = "Headline 4"
 	ws.cell(cur_row, cifs('E'), value= "Цена" ).style = "Headline 4"
 	ws.cell(cur_row, cifs('F'), value= "Опубликовано" ).style = "Headline 4"
-	ws.cell(cur_row, cifs('G'), value= "Дата окончания" ).style = "Headline 4"
+	ws.cell(cur_row, cifs('G'), value= "Дата Окончания" ).style = "Headline 4"
+	ws.cell(cur_row, cifs('H'), value= "Вид Аукциона" ).style = "Headline 4"
+	ws.cell(cur_row, cifs('I'), value= "Обеспечение Контракта" ).style = "Headline 4"
+	ws.cell(cur_row, cifs('J'), value= "Обеспечение Заявки" ).style = "Headline 4"
 	# ws.cell(cur_row, cifs('H'), value= "Документы" ).style = "Headline 4"
 	cur_row += 1
 	excluded = 0
