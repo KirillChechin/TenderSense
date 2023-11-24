@@ -14,7 +14,8 @@ from openpyxl.utils.cell import column_index_from_string as cifs
 from openpyxl.styles import Alignment
 
 
-headers= {"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.82 Safari/537.36"}
+# headers= {"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.82 Safari/537.36"}
+headers= {"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.82 Safari/537.36",'Accept':'text/html'}
 # r = requests.get(links.demo, headers=headers)
 # максимальная длинна ссылки до ошибки 414 == 7249
 
@@ -39,14 +40,14 @@ def parse_page(link,log=True):
 	result = []
 	base_url = 'https://zakupki.gov.ru/'
 
-	#перебираем все страницы результатов поиска
+	#если все результаты неуместились на 1-ую страницу, запрашиваем последующие страницы и дополням ими entrys
 	total_enties = soup.find("div", class_='search-results__total').text
 	total_enties = super_int(total_enties)
 	total_enties = min(total_enties,10_000) # потолок 10 000 тендеров, на случай если запрос выдаст 39 млн резуальтатов 
 	if links.records_per_page < total_enties:
 		total_pages = total_enties//links.records_per_page +1
 		print(f"{total_enties} запсией, запрос {total_pages} страниц по {links.records_per_page} на странице")
-		for p in range(2,total_pages+1): # информация первой страницы уже в entrys, начинаем со второй
+		for p in range(2,total_pages+1): #начианем со 2 перавая страиц
 			page = f'pageNumber={p}&'
 			this_link = link + page
 			doc = requests.get(this_link, headers=headers, timeout=15).text
@@ -84,7 +85,7 @@ def parse_page(link,log=True):
 		# ссылка на документы
 		doc_link = base_url + e.find("div", class_='href-block mt-auto d-none').find('a').get("href")
 
-		# Тип аукцина, закрытые не нужны
+		# Тип аукцина
 		tender_type = e.find("div", class_="col-9 p-0 registry-entry__header-top__title text-truncate")
 		tender_type = re.sub(r'\s+', ' ', tender_type.text)
 
