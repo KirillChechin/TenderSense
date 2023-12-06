@@ -16,9 +16,8 @@ def prev_work_day(days=1):
 		# print(past_date.strftime("%d.%m.%Y"),"is a weekend")
 		past_date = past_date-datetime.timedelta(1)
 	format_date = past_date.strftime("%d.%m.%Y")
-	return format_date
+	return f"publishDateFrom={format_date}&"
 
-param_date = f"publishDateFrom={prev_work_day(1)}&"
 
 def vip_orgs():
 	connection = sqlite3.connect('tender_info.db')
@@ -50,7 +49,7 @@ def all_okpd(param_only=False):
 		result = okpd_param
 	else:
 		#full url
-		result = base+params+start_price+param_date+region+okpd_param
+		result = base+params+start_price+prev_work_day(1)+region+okpd_param
 
 	return result+"&"
 
@@ -121,4 +120,4 @@ if __name__ == '__main__':
 	# print(len(all_okpd()))
 	# print(all_okpd(param_only=True))
 	# print(okpd_count())
-	print(prev_work_day(days=5))
+	print(prev_work_day(days=3))
