@@ -3,6 +3,7 @@ import links
 import requests
 from bs4 import BeautifulSoup
 
+import os
 import re
 import time
 from time import gmtime, strftime
@@ -31,7 +32,7 @@ def super_int(string):
 			string = string.replace(char, "")
 	return int(float(string.replace(",",".")))
 
-def parse_page(link,log=True):
+def parse_page(link,log=True,rich_info=True):
 	doc = requests.get(link, headers=headers, timeout=15).text
 	soup = BeautifulSoup(doc, "html.parser")
 	# entrys = soup.findAll("div", class_="search-registry-entrys-block") # хотя правильно entries
@@ -91,25 +92,27 @@ def parse_page(link,log=True):
 
 		pos = {"buyer":buyer,"buyer_link":buyer_link,"gk":gk,"gk_link":gk_link,"subj":subj,"price":price, "pub_date":pub_date ,"end_date": end_date, "doc_link":doc_link,"tender_type":tender_type}
 		
-		# собираем доп инфу по каждой заявке
-		entry = requests.get(gk_link, headers=headers, timeout=15).text
-		soup = BeautifulSoup(entry, "html.parser")
-		info_blocks = soup.find_all("div",class_='row blockInfo')
-		pos['contract_insurance'] = None
-		pos['tender_insurance'] = None
-		for block in info_blocks:
-			title = block.find('h2')
-			title = title.text if title else "NONE"
-			# print("просмотр блока",title)
-			if "Обеспечение исполнения контракта" in title:
-				contract_insurance = block.find_all("span")[:4]
-				pos['contract_insurance'] = " /".join(re.sub(r'\s+', ' ', x.text) for x in contract_insurance)
-			elif "Обеспечение заявки" in title:
-				tender_insurance = block.find_all("span")[:4]
-				pos["tender_insurance"] = " /".join(re.sub(r'\s+', ' ', x.text)  for x in tender_insurance)
+		if rich_info:
+			# собираем доп инфу по каждой заявке
+			entry = requests.get(gk_link, headers=headers, timeout=15).text
+			soup = BeautifulSoup(entry, "html.parser")
+			info_blocks = soup.find_all("div",class_='row blockInfo')
+			pos['contract_insurance'] = None
+			pos['tender_insurance'] = None
+			for block in info_blocks:
+				title = block.find('h2')
+				title = title.text if title else "NONE"
+				# print("просмотр блока",title)
+				if "Обеспечение исполнения контракта" in title:
+					contract_insurance = block.find_all("span")[:4]
+					pos['contract_insurance'] = " /".join(re.sub(r'\s+', ' ', x.text) for x in contract_insurance)
+				elif "Обеспечение заявки" in title:
+					tender_insurance = block.find_all("span")[:4]
+					pos["tender_insurance"] = " /".join(re.sub(r'\s+', ' ', x.text)  for x in tender_insurance)
 
 		result.append(pos)
-		links.log_tender(pos["gk"],pos["price"]) if log else None
+		if log:
+			links.log_tender(pos["gk"],pos["price"])
 
 	return result
 
@@ -168,6 +171,9 @@ def result_table(pos_list):
 		# 	cur_row += 1
 	ws.cell(cur_row, cifs('A'), value= f"Исключено из выдачи: {excluded} шт." ).style = "Headline 3"
 	cur_row += 1
+
+	if not os.path.exists('./reports'):
+		os.makedirs('./reports')
 
 	today = strftime("%d.%m.%Y ", gmtime())
 	file_name = f"Тендеры {str(len(pos_list)-excluded) } шт. {today}.xlsx"
