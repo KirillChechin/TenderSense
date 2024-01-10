@@ -81,7 +81,7 @@ def add(message):
 
 	if "okpd2Ids=" in message.text:
 		result = links.extract_add_okpd(message.text)
-		msg = "Добавлены ОКПД из ссылки:" + "\n".join(result)
+		msg = "Добавлены ОКПД из ссылки:" + "\n\t".join(result)
 		bot.reply_to(message, msg)
 
 	else:
@@ -93,7 +93,7 @@ def add(message):
 def show(message):
 	with open(file="tender_info.db",mode='rb') as doc:
 		bot.send_document(message.chat.id, doc)
-	bot.reply_to(message, "Прочитать базу данных можно с помощью программы программы SQLiteStudio<p><a href='https://progtips.ru/bazy-dannyx/menedzher-baz-dannyx-sqlitestudio.html'>|Ссылка обучение|</a><p><a href='https://sqlitestudio.pl/'>|Скачивание SQLiteStudio|</a> ", parse_mode='HTML')
+	bot.reply_to(message, "Прочитать базу данных можно с помощью программы SQLiteStudio \n<a href='https://progtips.ru/bazy-dannyx/menedzher-baz-dannyx-sqlitestudio.html'>|Ссылка обучение|</a>\n<a href='https://sqlitestudio.pl/'>|Скачивание SQLiteStudio|</a> ", parse_mode='HTML')
 
 
 if __name__ == '__main__':
