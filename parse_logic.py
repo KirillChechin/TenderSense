@@ -44,7 +44,7 @@ def parse_page(link,log=True,rich_info=True):
 	#если все результаты неуместились на 1-ую страницу, запрашиваем последующие страницы и дополням ими entrys
 	total_enties = soup.find("div", class_='search-results__total').text
 	total_enties = super_int(total_enties)
-	total_enties = min(total_enties,10_000) # потолок 10 000 тендеров, на случай если запрос выдаст 39 млн резуальтатов 
+	total_enties = min(total_enties,1_000) # потолок 1 000 тендеров, на случай если запрос выдаст 39 млн резуальтатов 
 	if links.records_per_page < total_enties:
 		total_pages = total_enties//links.records_per_page +1
 		print(f"{total_enties} запсией, запрос {total_pages} страниц по {links.records_per_page} на странице")
