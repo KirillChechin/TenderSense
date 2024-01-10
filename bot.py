@@ -71,6 +71,31 @@ def vips(message):
 		print(err_msg)
 		bot.reply_to(message, "Ошибка бота, перешлите сообщение @kirillchechin: \n"+str(err_msg))
 
+# добавить теплого заказчика или интересующий ОКПД
+@bot.message_handler(commands=["add"])
+def add(message):
+	if  "customerIdOrg=" in message.text:
+		result = links.extract_add_orgs(message.text)
+		msg = "Добавлены организации из ссылки:" + "\n".join(result)
+		bot.reply_to(message, msg)
+
+	if "okpd2Ids=" in message.text:
+		result = links.extract_add_okpd(message.text)
+		msg = "Добавлены ОКПД из ссылки:" + "\n".join(result)
+		bot.reply_to(message, msg)
+
+	else:
+		msg = "Что бы добавить теплого заказчика или интересующий ОКПД, пришлите ссылку на реультат поиска по окпд или по заказичку."
+		bot.reply_to(message, msg)
+
+# Выдать базу данных с параметрами в чат
+@bot.message_handler(commands=["show"])
+def show(message):
+	with open(file="tender_info.db",mode='rb') as doc:
+		bot.send_document(message.chat.id, doc)
+	bot.reply_to(message, "Прочитать базу данных можно с помощью программы программы SQLiteStudio<p><a href='https://progtips.ru/bazy-dannyx/menedzher-baz-dannyx-sqlitestudio.html'>|Ссылка обучение|</a><p><a href='https://sqlitestudio.pl/'>|Скачивание SQLiteStudio|</a> ", parse_mode='HTML')
+
+
 if __name__ == '__main__':
 	print("Бот работает \n",os.getcwd())
 	bot.infinity_polling()
