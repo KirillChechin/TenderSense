@@ -98,7 +98,7 @@ def show(message):
 	with open(file="tender_info.db",mode='rb') as doc:
 		bot.send_document(message.chat.id, doc)
 	msg = "В файле содержится информация о теплых заказчиках и отслеживаемых ОКПД. Так же хранится история тендеров попавших в отчеты.\n Можете открыть файл программой SQLiteStudio \n[|Как пользоваться|](https://progtips.ru/bazy-dannyx/menedzher-baz-dannyx-sqlitestudio.html)\n[|Скачивание SQLiteStudio|](https://sqlitestudio.pl/)"
-	bot.reply_to(message, msg, parse_mode='MarkdownV2')
+	bot.reply_to(message, msg, parse_mode='Markdown')
 
 # Техническая инфа для обеспечения незваисимой дальнейшей поддержки
 @bot.message_handler(commands=["about"])
