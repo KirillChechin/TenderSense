@@ -1,16 +1,24 @@
 import sqlite3
+import os
 import time, datetime
 from time import gmtime, strftime
 import urllib.parse
 
-records_per_page = 500
-
 base = 'https://zakupki.gov.ru/epz/order/extendedsearch/results.html?'
-# region = 'delKladrIds=5277327%2C5277335&delKladrIdsCodes=50000000000%2C77000000000&'
+# Далее описываются фильтры тендеров
+
+# Только заказчкики из москвы и московской области
 region='customerPlace=5277327%2C5277335&customerPlaceCodes=50000000000%2C77000000000&'
+
+# fz44=on&fz223 Закупки по ФЗ-44 и ФЗ-22. 
+# af=on Этап закупки - ПОДАЧА ЗАЯВОК,
+records_per_page = 500
 params = f'sortBy=UPDATE_DATE&showLotsInfoHidden=false&recordsPerPage=_{records_per_page}&fz44=on&fz223=on&af=on&'
+
+# Минимальная цена тендера (1 млн. руб.)
 start_price ='priceFromGeneral=1000000&'
 
+# Только тендеры начиная с предыдущего рабочего дня. Праздники не учитыватся.
 def prev_work_day(days=1):
 	past_date = datetime.datetime.today()-datetime.timedelta(days)
 	while past_date.weekday()>4:
@@ -20,8 +28,51 @@ def prev_work_day(days=1):
 	return f"publishDateFrom={format_date}&"
 
 
+db_name = "tender_info.db"
+def init_database(db_name):
+	"""создать базу данных если нет существующей"""
+	if not os.path.isfile(db_name):
+		print("Нет существующей базы данных, будет создана новая")
+		conn = None
+		try:
+			conn = sqlite3.connect(db_name)
+			print(sqlite3.version)
+		except Exception as e:
+			print(e)
+		finally:
+			if conn:
+				cursor = conn.cursor()
+
+				cursor.execute("""CREATE TABLE IF NOT EXISTS okpd (
+						id INTEGER PRIMARY KEY
+									 UNIQUE
+									 NOT NULL,
+						code TEXT	NOT NULL,
+						info TEXT
+					);""")
+				cursor.execute("""CREATE TABLE IF NOT EXISTS orgs (
+						inn  INTEGER PRIMARY KEY
+									 UNIQUE
+									 NOT NULL,
+						link TEXT	NOT NULL,
+						name TEXT
+					);""")
+				cursor.execute("""CREATE TABLE IF NOT EXISTS  tenders (
+						gk_num	INTEGER PRIMARY KEY
+										  UNIQUE
+										  NOT NULL,
+						timestamp INTEGER NOT NULL,
+						is_stale  BOOLEAN DEFAULT (FALSE),
+						price	 INTEGER DEFAULT (0) 
+					);""")
+				conn.commit()
+				conn.close()
+	else:
+		print("Существующая база данных:",db_name)
+
+
 def vip_orgs():
-	connection = sqlite3.connect('tender_info.db')
+	connection = sqlite3.connect(db_name)
 	cursor = connection.cursor()
 	cursor.execute('SELECT * FROM orgs')
 	orgs = cursor.fetchall()
@@ -35,7 +86,7 @@ def vip_orgs():
 
 def all_okpd(param_only=False):
 	okpd_param = "okpd2IdsWithNested=on&okpd2Ids="
-	connection = sqlite3.connect('tender_info.db')
+	connection = sqlite3.connect(db_name)
 	cursor = connection.cursor()
 	cursor.execute('SELECT id FROM okpd')
 	okpd = cursor.fetchall()
@@ -55,7 +106,7 @@ def all_okpd(param_only=False):
 	return result+"&"
 
 def log_tender(gk_num,price=0):
-	connection = sqlite3.connect('tender_info.db')
+	connection = sqlite3.connect(db_name)
 	cursor = connection.cursor()
 	cursor.execute('SELECT gk_num FROM tenders WHERE gk_num = ?',(gk_num,))
 	tender = cursor.fetchall()
@@ -70,7 +121,7 @@ def log_tender(gk_num,price=0):
 	return
 
 def log_tender_stale(gk_num,is_stale=True):
-	connection = sqlite3.connect('tender_info.db')
+	connection = sqlite3.connect(db_name)
 	cursor = connection.cursor()
 	cursor.execute('SELECT gk_num FROM tenders WHERE gk_num = ?',(gk_num,))
 	tender = cursor.fetchall()
@@ -85,7 +136,7 @@ def log_tender_stale(gk_num,is_stale=True):
 		return False
 
 def tender_is_stale(gk_num):
-	connection = sqlite3.connect('tender_info.db')
+	connection = sqlite3.connect(db_name)
 	cursor = connection.cursor()
 	cursor.execute('SELECT is_stale FROM tenders WHERE gk_num = ?',(gk_num,))
 	tender = cursor.fetchall()[0][0]
@@ -93,14 +144,14 @@ def tender_is_stale(gk_num):
 	return bool(tender)
 
 def vip_count():
-	connection = sqlite3.connect('tender_info.db')
+	connection = sqlite3.connect(db_name)
 	cursor = connection.cursor()
 	cursor.execute('SELECT COUNT(DISTINCT inn) FROM orgs')
 	count = cursor.fetchall()[0][0]
 	return count
 
 def okpd_count():
-	connection = sqlite3.connect('tender_info.db')
+	connection = sqlite3.connect(db_name)
 	cursor = connection.cursor()
 	cursor.execute('SELECT COUNT(DISTINCT id) FROM okpd')
 	count = cursor.fetchall()[0][0]
@@ -119,7 +170,7 @@ def extract_add_okpd(link:str):
 	info = "Добавлено через бота " + strftime("%d.%m.%Y ", gmtime())
 	okpds = list(zip(Ids,codes, [info]*len(codes)))
 
-	connection = sqlite3.connect('tender_info.db')
+	connection = sqlite3.connect(db_name)
 	cursor = connection.cursor()
 	for i in okpds:
 		cursor.execute('INSERT OR IGNORE INTO okpd(id,code,info) VALUES (?, ?,?)', (i[0],i[1],i[2],))
@@ -148,7 +199,7 @@ def extract_add_orgs(link:str):
 
 		orgs.append([org_inn,url_param,org_name])
 
-	connection = sqlite3.connect('tender_info.db')
+	connection = sqlite3.connect(db_name)
 	cursor = connection.cursor()
 	for o in orgs:
 		cursor.execute('INSERT OR IGNORE INTO orgs(inn,link,name) VALUES (?, ?,?)', (o[0],o[1],o[2],))

@@ -98,15 +98,17 @@ def show(message):
 	with open(file="tender_info.db",mode='rb') as doc:
 		bot.send_document(message.chat.id, doc)
 	msg = "В файле содержится информация о теплых заказчиках и отслеживаемых ОКПД. Так же хранится история тендеров попавших в отчеты.\n Можете открыть файл программой SQLiteStudio \n[|Как пользоваться|](https://progtips.ru/bazy-dannyx/menedzher-baz-dannyx-sqlitestudio.html)\n[|Скачивание SQLiteStudio|](https://sqlitestudio.pl/)"
-	bot.reply_to(message, msg, parse_mode='Markdown')
+	bot.reply_to(message, msg, parse_mode='Markdown',disable_web_page_preview=True)
 
 # Техническая инфа для обеспечения незваисимой дальнейшей поддержки
 @bot.message_handler(commands=["about"])
 def info(message):
 	with open(file="README.md",mode='r', encoding='utf-8') as file:
-		msg = file.read().replace("#","  ").replace("_","\_")
-		bot.reply_to(message, msg, parse_mode='Markdown')
+		msg = file.read()
+		msg = msg.replace("#","🔵")
+		bot.reply_to(message, msg, parse_mode='Markdown', disable_web_page_preview=True)
 
 if __name__ == '__main__':
+	links.init_database("tender_info.db")
 	print("Бот работает \n",os.getcwd())
 	bot.infinity_polling()
