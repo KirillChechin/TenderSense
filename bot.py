@@ -101,11 +101,11 @@ def show(message):
 	bot.reply_to(message, msg, parse_mode='MarkdownV2')
 
 # Техническая инфа для обеспечения незваисимой дальнейшей поддержки
-@bot.message_handler(commands=["info"])
+@bot.message_handler(commands=["about"])
 def info(message):
 	with open(file="README.md",mode='r', encoding='utf-8') as file:
-		msg = file.read()
-		bot.reply_to(message, msg, parse_mode='MarkdownV2')
+		msg = file.read().replace("#","  ").replace("_","\_")
+		bot.reply_to(message, msg, parse_mode='Markdown')
 
 if __name__ == '__main__':
 	print("Бот работает \n",os.getcwd())
