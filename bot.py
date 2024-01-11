@@ -11,7 +11,11 @@ import time
 # Описание команд тг бота
 # okpd - ОКПД2
 # orgs - отслеживаемые заказчики
-# no - исключить ГК из отчета
+# add - добавить ОКПД или заказчика
+# show - выгрузить знания бота
+# about - техническая инфа о боте
+
+# no - исключить ГК из отчета # не актуальная фича
 
 
 bot = telebot.TeleBot(bot_config.token)
@@ -93,8 +97,15 @@ def add(message):
 def show(message):
 	with open(file="tender_info.db",mode='rb') as doc:
 		bot.send_document(message.chat.id, doc)
-	bot.reply_to(message, "Прочитать базу данных можно с помощью программы SQLiteStudio \n<a href='https://progtips.ru/bazy-dannyx/menedzher-baz-dannyx-sqlitestudio.html'>|Ссылка обучение|</a>\n<a href='https://sqlitestudio.pl/'>|Скачивание SQLiteStudio|</a> ", parse_mode='HTML')
+	msg = "В файле содержится информация о теплых заказчиках и отслеживаемых ОКПД. Так же хранится история тендеров попавших в отчеты.\n Можете открыть файл программой SQLiteStudio \n[|Как пользоваться|](https://progtips.ru/bazy-dannyx/menedzher-baz-dannyx-sqlitestudio.html)\n[|Скачивание SQLiteStudio|](https://sqlitestudio.pl/)"
+	bot.reply_to(message, msg, parse_mode='MarkdownV2')
 
+# Техническая инфа для обеспечения незваисимой дальнейшей поддержки
+@bot.message_handler(commands=["info"])
+def info(message):
+	with open(file="README.md",mode='r', encoding='utf-8') as file:
+		msg = file.read()
+		bot.reply_to(message, msg, parse_mode='MarkdownV2')
 
 if __name__ == '__main__':
 	print("Бот работает \n",os.getcwd())
