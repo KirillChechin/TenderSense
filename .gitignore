@@ -1,11 +1,9 @@
 
 __pycache__/
-search_result.xlsx
 bot_config.py
 *.xlsx
-ex1.html
 Эксперементы/*
 reports/*
 *.sublime-workspace
 tender_info.db
-tender_info.db
+

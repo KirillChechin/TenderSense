@@ -12,7 +12,7 @@ import time
 # okpd - ОКПД2
 # orgs - отслеживаемые заказчики
 # add - добавить ОКПД или заказчика
-# show - выгрузить знания бота
+# data - выгрузить знания бота
 # about - техническая инфа о боте
 
 # no - исключить ГК из отчета # не актуальная фича
@@ -93,8 +93,8 @@ def add(message):
 		bot.reply_to(message, msg)
 
 # Выдать базу данных с параметрами в чат
-@bot.message_handler(commands=["show"])
-def show(message):
+@bot.message_handler(commands=["show","data"])
+def data(message):
 	with open(file="tender_info.db",mode='rb') as doc:
 		bot.send_document(message.chat.id, doc)
 	msg = "В файле содержится информация о теплых заказчиках и отслеживаемых ОКПД. Так же хранится история тендеров попавших в отчеты.\n Можете открыть файл программой SQLiteStudio \n[|Как пользоваться|](https://progtips.ru/bazy-dannyx/menedzher-baz-dannyx-sqlitestudio.html)\n[|Скачивание SQLiteStudio|](https://sqlitestudio.pl/)"
@@ -109,6 +109,6 @@ def info(message):
 		bot.reply_to(message, msg, parse_mode='Markdown', disable_web_page_preview=True)
 
 if __name__ == '__main__':
-	links.init_database("tender_info.db")
+	links.init_database(links.db_name)
 	print("Бот работает \n",os.getcwd())
 	bot.infinity_polling()
