@@ -3,7 +3,7 @@ import links
 import requests
 from bs4 import BeautifulSoup
 
-import os
+import os, sys
 import re
 import time
 from time import gmtime, strftime
@@ -33,6 +33,7 @@ def super_int(string):
 	return int(float(string.replace(",",".")))
 
 def parse_page(link,log=True,rich_info=True):
+	print(f"request to line {sys._getframe().f_lineno} \t", link)
 	doc = requests.get(link, headers=headers, timeout=15).text
 	soup = BeautifulSoup(doc, "html.parser")
 	# entrys = soup.findAll("div", class_="search-registry-entrys-block") # хотя правильно entries
@@ -51,6 +52,7 @@ def parse_page(link,log=True,rich_info=True):
 		for p in range(2,total_pages+1): #начианем со 2 перавая страиц
 			page = f'pageNumber={p}&'
 			this_link = link + page
+			print(f"request to line {sys._getframe().f_lineno} \t", this_link)
 			doc = requests.get(this_link, headers=headers, timeout=15).text
 			soup = BeautifulSoup(doc, "html.parser")
 			entrys.extend(soup.findAll("div", class_="search-registry-entry-block box-shadow-search-input"))
@@ -94,6 +96,8 @@ def parse_page(link,log=True,rich_info=True):
 		
 		if rich_info:
 			# собираем доп инфу по каждой заявке
+			time.sleep(0.01) # https://stackoverflow.com/questions/383738/104-connection-reset-by-peer-socket-error-or-when-does-closing-a-socket-resu
+			print(f"request to line {sys._getframe().f_lineno} \t", gk_link)
 			entry = requests.get(gk_link, headers=headers, timeout=15).text
 			soup = BeautifulSoup(entry, "html.parser")
 			info_blocks = soup.find_all("div",class_='row blockInfo')
